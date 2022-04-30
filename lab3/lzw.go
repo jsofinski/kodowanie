@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 )
 
@@ -24,17 +25,45 @@ func encodeFile(inputFileName string, outputFileName string) {
 	// code
 
 	var dictionary = make([][]int, 0)
-
+	var dictCounter = 256 + 1
+	var binaryLength = int(math.Ceil(math.Log2(float64(dictCounter))))
 	for i := 0; i < 256; i++ {
 		temp := make([]int, 0)
 		temp = append(temp, i)
 		dictionary = append(dictionary, temp)
 	}
+	fmt.Println(binaryLength)
+	fmt.Println(dictionary)
+	var pChar = make([]int, 0)
+	var tempArray = make([]int, 0)
+	var cChar = 0
 
-	// fmt.Println(dictionary)
-	// for i := 0; i < int(size); i++ {
-	// 	fmt.Println(byteFile[i])
-	// }
+	var outputBuffer = make([]int, 0)
+	for i := 0; i < int(size); i++ {
+		// fmt.Println(pChar)
+		cChar = int(byteFile[i])
+		tempArray = make([]int, len(pChar))
+		copy(tempArray, pChar)
+		tempArray = append(tempArray, cChar)
+		// fmt.Println(tempArray)
+		if arrayContains(dictionary, tempArray) {
+			pChar = append(pChar, cChar)
+
+		} else {
+			// output P from dictionary
+			outputBuffer = append(outputBuffer, getIndexFromDictionary(dictionary, pChar))
+			fmt.Println(getIndexFromDictionary(dictionary, pChar))
+			pChar = append(pChar, cChar)
+			// fmt.Println(pChar)
+			dictionary = append(dictionary, pChar)
+			dictCounter++
+			binaryLength = int(math.Ceil(math.Log2(float64(dictCounter))))
+			pChar = make([]int, 0)
+			pChar = append(pChar, cChar)
+		}
+	}
+
+	fmt.Println(dictionary)
 
 	// print info
 	fileStat, err := outputFile.Stat()
