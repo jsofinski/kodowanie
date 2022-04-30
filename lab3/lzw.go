@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strconv"
 )
 
 func test() {
@@ -38,7 +39,7 @@ func encodeFile(inputFileName string, outputFileName string) {
 	var tempArray = make([]int, 0)
 	var cChar = 0
 
-	var outputBuffer = make([]int, 0)
+	var outputBuffer = ""
 	for i := 0; i < int(size); i++ {
 		// fmt.Println(pChar)
 		cChar = int(byteFile[i])
@@ -51,8 +52,25 @@ func encodeFile(inputFileName string, outputFileName string) {
 
 		} else {
 			// output P from dictionary
-			outputBuffer = append(outputBuffer, getIndexFromDictionary(dictionary, pChar))
-			fmt.Println(getIndexFromDictionary(dictionary, pChar))
+			tempIndex := getIndexFromDictionary(dictionary, pChar)
+			tempString := strconv.FormatInt(int64(tempIndex), 2)
+			tempString = rightjust(tempString, binaryLength, "0")
+			outputBuffer = outputBuffer + tempString
+			for len(outputBuffer)%8 == 0 && len(outputBuffer) > 0 {
+				var b, err = strconv.ParseInt(outputBuffer[:8], 2, 9)
+				if err != nil {
+					panic(err)
+				}
+				// fmt.Println(outputBuffer)
+				// fmt.Println(byte(b))
+				// fmt.Print(binaryLength)
+				// byte(b) save to outputFile
+				if _, err := outputFile.Write([]byte{byte(b)}); err != nil {
+					panic(err)
+				}
+				outputBuffer = outputBuffer[8:]
+			}
+
 			pChar = append(pChar, cChar)
 			// fmt.Println(pChar)
 			dictionary = append(dictionary, pChar)
@@ -63,7 +81,17 @@ func encodeFile(inputFileName string, outputFileName string) {
 		}
 	}
 
-	fmt.Println(dictionary)
+	// output buffer to outputFile
+	// int -> string -> bytes
+
+	// for i := 0; i < len(outputBuffer); i++ {
+	// 	tempString := strconv.FormatInt(int64(outputBuffer[i]), 2)
+	// 	tempString = rightjust(tempString, 9, "0")
+	// 	fmt.Println(tempString)
+	// }
+
+	// fmt.Println(outputBuffer)
+	// fmt.Println(dictionary)
 
 	// print info
 	fileStat, err := outputFile.Stat()
