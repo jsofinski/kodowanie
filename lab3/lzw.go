@@ -49,7 +49,6 @@ func encodeFile(inputFileName string, outputFileName string) {
 		// fmt.Println(tempArray)
 		if arrayContains(dictionary, tempArray) {
 			pChar = append(pChar, cChar)
-
 		} else {
 			// output P from dictionary
 			tempIndex := getIndexFromDictionary(dictionary, pChar)
@@ -80,6 +79,25 @@ func encodeFile(inputFileName string, outputFileName string) {
 			pChar = append(pChar, cChar)
 		}
 	}
+	// fmt.Println(outputBuffer)
+	// Save the rest of outputBuffer to outputFile
+	for len(outputBuffer) > 0 {
+		var b, err = strconv.ParseInt(outputBuffer[:8], 2, 9)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(outputBuffer)
+		// byte(b) save to outputFile
+		if _, err := outputFile.Write([]byte{byte(b)}); err != nil {
+			panic(err)
+		}
+		outputBuffer = outputBuffer[8:]
+
+		if len(outputBuffer) < 8 && len(outputBuffer) > 0 {
+			outputBuffer = rightjust(outputBuffer, 8, "0")
+		}
+	}
+	// fmt.Println(outputBuffer)
 
 	// output buffer to outputFile
 	// int -> string -> bytes
@@ -91,7 +109,7 @@ func encodeFile(inputFileName string, outputFileName string) {
 	// }
 
 	// fmt.Println(outputBuffer)
-	// fmt.Println(dictionary)
+	fmt.Println(dictionary)
 
 	// print info
 	fileStat, err := outputFile.Stat()
@@ -105,8 +123,6 @@ func encodeFile(inputFileName string, outputFileName string) {
 
 	defer outputFile.Close()
 	defer intputFile.Close()
-
-	// fmt.Println(stringValue)
 }
 
 func decodeFile(inputFileName string, outputFileName string) {
