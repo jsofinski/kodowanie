@@ -6,8 +6,6 @@ import (
 )
 
 func main() {
-	fmt.Println("hej")
-
 	argsWithProg := os.Args
 	var counter [256][2]int
 

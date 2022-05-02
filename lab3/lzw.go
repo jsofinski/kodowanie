@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+var MaximumBits = 12
+
 func test() {
 	fmt.Println("test")
 }
@@ -41,7 +43,10 @@ func encodeFile(inputFileName string, outputFileName string) {
 
 	var outputBuffer = ""
 	for i := 0; i < int(size); i++ {
-		// fmt.Println(pChar)
+		if i%10000 == 0 {
+			fmt.Println(i)
+			fmt.Println(binaryLength)
+		}
 		cChar = int(byteFile[i])
 		// fmt.Println("save next byte: ", cChar)
 		tempArray = make([]int, len(pChar))
@@ -74,8 +79,10 @@ func encodeFile(inputFileName string, outputFileName string) {
 
 			pChar = append(pChar, cChar)
 			// fmt.Println(pChar)
-			dictionary = append(dictionary, pChar)
-			dictCounter++
+			if binaryLength <= MaximumBits {
+				dictionary = append(dictionary, pChar)
+				dictCounter++
+			}
 			binaryLength = int(math.Ceil(math.Log2(float64(dictCounter))))
 			pChar = make([]int, 0)
 			pChar = append(pChar, cChar)
@@ -112,7 +119,7 @@ func encodeFile(inputFileName string, outputFileName string) {
 	// }
 
 	// fmt.Println(outputBuffer)
-	fmt.Println(dictionary)
+	// fmt.Println(dictionary)
 
 	// print info
 	fileStat, err := outputFile.Stat()
@@ -144,7 +151,7 @@ func decodeFile(inputFileName string, outputFileName string) {
 	var dictionary = make([][]int, 0)
 	var dictCounter = 256 + 2
 	var binaryLength = int(math.Ceil(math.Log2(float64(dictCounter))))
-	// dictionay init
+	// dictionary init
 	for i := 0; i < 256; i++ {
 		temp := make([]int, 0)
 		temp = append(temp, i)
@@ -178,6 +185,8 @@ func decodeFile(inputFileName string, outputFileName string) {
 		panic(err)
 	}
 
+	endOfDictionary := false
+
 	for int64(lastInputIndex) < size {
 		// make sure there at least binaryLength buffer in inputStringBuffer
 		for len(inputStringBuffer) < binaryLength {
@@ -186,12 +195,13 @@ func decodeFile(inputFileName string, outputFileName string) {
 		}
 		// fmt.Println(inputStringBuffer, " ", lastInputIndex)
 		tempByte, err = strconv.ParseInt(inputStringBuffer[:binaryLength], 2, 32)
+		// fmt.Println(tempByte)
+
 		inputStringBuffer = inputStringBuffer[binaryLength:]
 		if err != nil {
 			panic(err)
 		}
 		new = int(tempByte)
-		// fmt.Println(new)
 
 		// if !arrayContains(dictionary, new) {
 		if new > dictCounter {
@@ -225,16 +235,21 @@ func decodeFile(inputFileName string, outputFileName string) {
 		tempOldC := make([]int, 0)
 		tempOldC = append(tempOldC, dictionary[old]...)
 		tempOldC = append(tempOldC, c...)
-		// fmt.Println("add to dict: ", tempOldC)
-		dictionary = append(dictionary, tempOldC)
-		dictCounter++
+
+		if !endOfDictionary {
+			dictionary = append(dictionary, tempOldC)
+			dictCounter++
+		}
+		if binaryLength > MaximumBits {
+			endOfDictionary = true
+		}
 		binaryLength = int(math.Ceil(math.Log2(float64(dictCounter))))
 		// fmt.Println(binaryLength)
 
 		old = new
 	}
-	fmt.Println(size, lastInputIndex)
-	// fmt.Println(NObytes)
+
+	// fmt.Println(dictionary)
 
 	defer outputFile.Close()
 }
