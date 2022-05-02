@@ -86,7 +86,7 @@ func encodeFile(inputFileName string, outputFileName string) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println(outputBuffer)
+		// fmt.Println(outputBuffer)
 		// byte(b) save to outputFile
 		if _, err := outputFile.Write([]byte{byte(b)}); err != nil {
 			panic(err)
@@ -130,23 +130,110 @@ func decodeFile(inputFileName string, outputFileName string) {
 	if err != nil {
 		panic(err)
 	}
-
 	intputFile, size := getFile(inputFileName)
-	bytes := make([]byte, size)
-	NObytes, err := intputFile.Read(bytes)
+	byteFile := make([]byte, size)
+	_, err = intputFile.Read(byteFile)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Input size:  ", size, len(byteFile))
 
 	var dictionary = make([][]int, 0)
-
+	var dictCounter = 256 + 1
+	var binaryLength = int(math.Ceil(math.Log2(float64(dictCounter))))
+	// dictionay init
 	for i := 0; i < 256; i++ {
 		temp := make([]int, 0)
 		temp = append(temp, i)
 		dictionary = append(dictionary, temp)
 	}
 
+	var old = -1
+	var new = -1
+	// variable names s, c from LZW pseudocode
+	var s = make([]int, 0)
+	var c = make([]int, 0)
+	var lastInputIndex = 0
+	var inputBufferMinLength = 9
+	var inputStringBuffer = ""
+	for len(inputStringBuffer) < inputBufferMinLength {
+		inputStringBuffer += getNextByteString(byteFile, lastInputIndex)
+		lastInputIndex++
+	}
+	var tempByte int64
+	tempByte, err = strconv.ParseInt(inputStringBuffer[:binaryLength], 2, 9)
+	inputStringBuffer = inputStringBuffer[binaryLength:]
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(NObytes)
+	old = int(tempByte)
+	// ouput translation of Old; or dont?
+	if _, err := outputFile.Write([]byte{byte(old)}); err != nil {
+		panic(err)
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	for int64(lastInputIndex) < size {
+		// make sure there at least binaryLength buffer in inputStringBuffer
+		for len(inputStringBuffer) < binaryLength {
+			inputStringBuffer += getNextByteString(byteFile, lastInputIndex)
+			lastInputIndex += 1
+		}
+		// fmt.Println(inputStringBuffer, " ", lastInputIndex)
+		tempByte, err = strconv.ParseInt(inputStringBuffer[:binaryLength], 2, 16)
+		inputStringBuffer = inputStringBuffer[binaryLength:]
+		if err != nil {
+			panic(err)
+		}
+		new = int(tempByte)
+		// fmt.Println(new)
+
+		// if !arrayContains(dictionary, new) {
+		if new > dictCounter {
+			// s = translation of old
+			s = []int{}
+			fmt.Println("looking in dict: ", old)
+			s = dictionary[old]
+			// ... allows to pass multiple values to append(), nice
+			s = append(s, c...)
+		} else {
+			// s = translation of new
+			s = []int{}
+			fmt.Println("dict len: ", len(dictionary))
+			s = append(s, dictionary[new]...)
+		}
+
+		// output S
+		fmt.Println("Output: ", s)
+
+		if _, err := outputFile.Write(intArrayToByteArray(s)); err != nil {
+			panic(err)
+		}
+		// c = first char of S
+		c = s[:1]
+		// add old + c to stringTable
+		tempOldC := make([]int, 0)
+		tempOldC = append(tempOldC, dictionary[old]...)
+		tempOldC = append(tempOldC, c...)
+		fmt.Println("add to dict: ", tempOldC)
+		dictionary = append(dictionary, tempOldC)
+		dictCounter++
+		binaryLength = int(math.Ceil(math.Log2(float64(dictCounter))))
+
+		old = new
+	}
+
+	// fmt.Println(NObytes)
 
 	defer outputFile.Close()
+}
+
+func getNextByteString(byteFile []byte, lastInputIndex int) string {
+	tempByte := byteFile[lastInputIndex]
+	tempStringByte := strconv.FormatInt(int64(tempByte), 2)
+	tempStringByte = rightjust(tempStringByte, 8, "0")
+	// fmt.Println("get next byte string output: ", tempStringByte)
+	return tempStringByte
 }
