@@ -172,9 +172,19 @@ func getIndexFromDictionary(dictionary [][]int, array []int) int {
 			return index
 		}
 	}
+	fmt.Println(dictionary)
+	fmt.Println(array)
 	return -1
 }
 
 func rightjust(s string, n int, fill string) string {
 	return strings.Repeat(fill, n-len(s)) + s
+}
+
+func intArrayToByteArray(intArray []int) []byte {
+	tempByteArray := make([]byte, 0)
+	for i := 0; i < len(intArray); i++ {
+		tempByteArray = append(tempByteArray, byte(intArray[i]))
+	}
+	return tempByteArray
 }

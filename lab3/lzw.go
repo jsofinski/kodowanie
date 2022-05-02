@@ -33,8 +33,8 @@ func encodeFile(inputFileName string, outputFileName string) {
 		temp = append(temp, i)
 		dictionary = append(dictionary, temp)
 	}
-	fmt.Println(binaryLength)
-	fmt.Println(dictionary)
+	// fmt.Println(binaryLength)
+	// fmt.Println(dictionary)
 	var pChar = make([]int, 0)
 	var tempArray = make([]int, 0)
 	var cChar = 0
@@ -43,6 +43,7 @@ func encodeFile(inputFileName string, outputFileName string) {
 	for i := 0; i < int(size); i++ {
 		// fmt.Println(pChar)
 		cChar = int(byteFile[i])
+		// fmt.Println("save next byte: ", cChar)
 		tempArray = make([]int, len(pChar))
 		copy(tempArray, pChar)
 		tempArray = append(tempArray, cChar)
@@ -60,6 +61,7 @@ func encodeFile(inputFileName string, outputFileName string) {
 				if err != nil {
 					panic(err)
 				}
+				// fmt.Println("output: ", b)
 				// fmt.Println(outputBuffer)
 				// fmt.Println(byte(b))
 				// fmt.Print(binaryLength)
@@ -86,6 +88,7 @@ func encodeFile(inputFileName string, outputFileName string) {
 		if err != nil {
 			panic(err)
 		}
+		// fmt.Println("output: ", b)
 		// fmt.Println(outputBuffer)
 		// byte(b) save to outputFile
 		if _, err := outputFile.Write([]byte{byte(b)}); err != nil {
@@ -139,7 +142,7 @@ func decodeFile(inputFileName string, outputFileName string) {
 	fmt.Println("Input size:  ", size, len(byteFile))
 
 	var dictionary = make([][]int, 0)
-	var dictCounter = 256 + 1
+	var dictCounter = 256 + 2
 	var binaryLength = int(math.Ceil(math.Log2(float64(dictCounter))))
 	// dictionay init
 	for i := 0; i < 256; i++ {
@@ -182,7 +185,7 @@ func decodeFile(inputFileName string, outputFileName string) {
 			lastInputIndex += 1
 		}
 		// fmt.Println(inputStringBuffer, " ", lastInputIndex)
-		tempByte, err = strconv.ParseInt(inputStringBuffer[:binaryLength], 2, 16)
+		tempByte, err = strconv.ParseInt(inputStringBuffer[:binaryLength], 2, 32)
 		inputStringBuffer = inputStringBuffer[binaryLength:]
 		if err != nil {
 			panic(err)
@@ -194,19 +197,24 @@ func decodeFile(inputFileName string, outputFileName string) {
 		if new > dictCounter {
 			// s = translation of old
 			s = []int{}
-			fmt.Println("looking in dict: ", old)
+			// fmt.Println("looking in dict: ", old)
 			s = dictionary[old]
 			// ... allows to pass multiple values to append(), nice
 			s = append(s, c...)
 		} else {
 			// s = translation of new
 			s = []int{}
-			fmt.Println("dict len: ", len(dictionary))
-			s = append(s, dictionary[new]...)
+			// fmt.Println("dict len: ", len(dictionary))
+			if new == len(dictionary) {
+				s = append(s, dictionary[old]...)
+				s = append(s, dictionary[old][0])
+			} else {
+				s = append(s, dictionary[new]...)
+			}
 		}
 
 		// output S
-		fmt.Println("Output: ", s)
+		// fmt.Println("Output: ", s)
 
 		if _, err := outputFile.Write(intArrayToByteArray(s)); err != nil {
 			panic(err)
@@ -217,14 +225,15 @@ func decodeFile(inputFileName string, outputFileName string) {
 		tempOldC := make([]int, 0)
 		tempOldC = append(tempOldC, dictionary[old]...)
 		tempOldC = append(tempOldC, c...)
-		fmt.Println("add to dict: ", tempOldC)
+		// fmt.Println("add to dict: ", tempOldC)
 		dictionary = append(dictionary, tempOldC)
 		dictCounter++
 		binaryLength = int(math.Ceil(math.Log2(float64(dictCounter))))
+		// fmt.Println(binaryLength)
 
 		old = new
 	}
-
+	fmt.Println(size, lastInputIndex)
 	// fmt.Println(NObytes)
 
 	defer outputFile.Close()
@@ -234,6 +243,5 @@ func getNextByteString(byteFile []byte, lastInputIndex int) string {
 	tempByte := byteFile[lastInputIndex]
 	tempStringByte := strconv.FormatInt(int64(tempByte), 2)
 	tempStringByte = rightjust(tempStringByte, 8, "0")
-	// fmt.Println("get next byte string output: ", tempStringByte)
 	return tempStringByte
 }
