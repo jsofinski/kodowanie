@@ -188,3 +188,21 @@ func intArrayToByteArray(intArray []int) []byte {
 	}
 	return tempByteArray
 }
+
+func sumOfLengths(buffer []buffer) int {
+	sum := 0
+	for i := 0; i < len(buffer); i++ {
+		sum += buffer[i].length
+	}
+	return sum
+}
+
+func setBit(n int, pos uint) int {
+	n |= (1 << pos)
+	return n
+}
+
+func hasBit(n int, pos uint) bool {
+	val := n & (1 << pos)
+	return (val > 0)
+}

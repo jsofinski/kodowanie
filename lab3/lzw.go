@@ -9,6 +9,11 @@ import (
 
 var MaximumBits = 12
 
+type buffer struct {
+	value  int
+	length int
+}
+
 func test() {
 	fmt.Println("test")
 }
@@ -41,7 +46,8 @@ func encodeFile(inputFileName string, outputFileName string) {
 	var tempArray = make([]int, 0)
 	var cChar = 0
 
-	var outputBuffer = ""
+	var outputBufferInt = make([]buffer, 0)
+
 	for i := 0; i < int(size); i++ {
 		if i%10000 == 0 {
 			fmt.Println(i)
@@ -58,23 +64,11 @@ func encodeFile(inputFileName string, outputFileName string) {
 		} else {
 			// output P from dictionary
 			tempIndex := getIndexFromDictionary(dictionary, pChar)
-			tempString := strconv.FormatInt(int64(tempIndex), 2)
-			tempString = rightjust(tempString, binaryLength, "0")
-			outputBuffer = outputBuffer + tempString
-			for len(outputBuffer)%8 == 0 && len(outputBuffer) > 0 {
-				var b, err = strconv.ParseInt(outputBuffer[:8], 2, 9)
-				if err != nil {
-					panic(err)
-				}
-				// fmt.Println("output: ", b)
-				// fmt.Println(outputBuffer)
-				// fmt.Println(byte(b))
-				// fmt.Print(binaryLength)
-				// byte(b) save to outputFile
-				if _, err := outputFile.Write([]byte{byte(b)}); err != nil {
-					panic(err)
-				}
-				outputBuffer = outputBuffer[8:]
+			outputBufferInt = append(outputBufferInt, buffer{value: tempIndex, length: binaryLength})
+
+			for sumOfLengths(outputBufferInt)%8 == 0 && sumOfLengths(outputBufferInt) > 0 {
+				saveIntBufferToOutput(outputBufferInt, outputFile)
+				outputBufferInt = make([]buffer, 0)
 			}
 
 			pChar = append(pChar, cChar)
@@ -90,33 +84,10 @@ func encodeFile(inputFileName string, outputFileName string) {
 	}
 	// fmt.Println(outputBuffer)
 	// Save the rest of outputBuffer to outputFile
-	for len(outputBuffer) > 0 {
-		var b, err = strconv.ParseInt(outputBuffer[:8], 2, 9)
-		if err != nil {
-			panic(err)
-		}
-		// fmt.Println("output: ", b)
-		// fmt.Println(outputBuffer)
-		// byte(b) save to outputFile
-		if _, err := outputFile.Write([]byte{byte(b)}); err != nil {
-			panic(err)
-		}
-		outputBuffer = outputBuffer[8:]
-
-		if len(outputBuffer) < 8 && len(outputBuffer) > 0 {
-			outputBuffer = rightjust(outputBuffer, 8, "0")
-		}
+	for sumOfLengths(outputBufferInt) > 0 {
+		saveIntBufferToOutput(outputBufferInt, outputFile)
+		outputBufferInt = make([]buffer, 0)
 	}
-	// fmt.Println(outputBuffer)
-
-	// output buffer to outputFile
-	// int -> string -> bytes
-
-	// for i := 0; i < len(outputBuffer); i++ {
-	// 	tempString := strconv.FormatInt(int64(outputBuffer[i]), 2)
-	// 	tempString = rightjust(tempString, 9, "0")
-	// 	fmt.Println(tempString)
-	// }
 
 	// fmt.Println(outputBuffer)
 	// fmt.Println(dictionary)
@@ -259,4 +230,64 @@ func getNextByteString(byteFile []byte, lastInputIndex int) string {
 	tempStringByte := strconv.FormatInt(int64(tempByte), 2)
 	tempStringByte = rightjust(tempStringByte, 8, "0")
 	return tempStringByte
+}
+
+func saveIntBufferToOutput(buffer []buffer, outputFile *os.File) {
+	totalLength := sumOfLengths(buffer)
+	bytes := make([]byte, totalLength/8)
+	if totalLength%8 != 0 {
+		// fmt.Println("DUPA")
+		bytes = append(bytes, 0)
+	}
+
+	currentByte := 0
+	currentByteIndex := 0
+	for i := 0; i < len(buffer); i++ {
+		for j := buffer[i].length - 1; j >= 0; j-- {
+			if hasBit(buffer[i].value, uint(j)) {
+				bytes[currentByte] = byte(setBit(int(bytes[currentByte]), 7-uint(currentByteIndex)))
+			}
+			currentByteIndex += 1
+			if currentByteIndex%8 == 0 {
+				currentByteIndex = 0
+				currentByte += 1
+			}
+		}
+	}
+
+	fmt.Println("bytes:")
+	fmt.Println(bytes)
+	if _, err := outputFile.Write(bytes); err != nil {
+		panic(err)
+	}
+}
+
+func getIntBufferToOutput(buffer []buffer, inputFile *os.File) {
+	totalLength := sumOfLengths(buffer)
+	bytes := make([]byte, totalLength/8)
+	if totalLength%8 != 0 {
+		// fmt.Println("DUPA")
+		bytes = append(bytes, 0)
+	}
+
+	currentByte := 0
+	currentByteIndex := 0
+	for i := 0; i < len(buffer); i++ {
+		for j := buffer[i].length - 1; j >= 0; j-- {
+			if hasBit(buffer[i].value, uint(j)) {
+				bytes[currentByte] = byte(setBit(int(bytes[currentByte]), 7-uint(currentByteIndex)))
+			}
+			currentByteIndex += 1
+			if currentByteIndex%8 == 0 {
+				currentByteIndex = 0
+				currentByte += 1
+			}
+		}
+	}
+
+	fmt.Println("bytes:")
+	fmt.Println(bytes)
+	if _, err := outputFile.Write(bytes); err != nil {
+		panic(err)
+	}
 }
