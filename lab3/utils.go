@@ -7,7 +7,6 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strings"
 )
 
 func sortCounter(counter [256][2]int) [256][2]int {
@@ -175,10 +174,6 @@ func getIndexFromDictionary(dictionary [][]int, array []int) int {
 	fmt.Println(dictionary)
 	fmt.Println(array)
 	return -1
-}
-
-func rightjust(s string, n int, fill string) string {
-	return strings.Repeat(fill, n-len(s)) + s
 }
 
 func intArrayToByteArray(intArray []int) []byte {
