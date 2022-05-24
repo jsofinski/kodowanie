@@ -63,15 +63,8 @@ func makePixelMatrix(byteFile []byte, width int, height int, rbits int, gbits in
 			index += 3
 		}
 	}
+	// fmt.Println("cyk ", rbits, gbits, bbits)
 	return byteOutput
-
-	// test1 := pixel{r: 12, g: 105, b: 201}
-	// test2 := pixel{r: 24, g: 115, b: 181}
-	// fmt.Println(pixelAdd(test1, test2, 256))
-	// fmt.Println(pixelSub(test1, test2, 256))
-	// fmt.Println((10 - 12) % 256)
-	// fmt.Println(myMod((10 - 12), 256))
-
 }
 
 func printMSE(bitmap []byte, byteFile []byte) {
@@ -141,4 +134,68 @@ func printSNR(bitmap []byte, byteFile []byte) {
 	}
 	dec = 10 * math.Log10(sum/mseSum)
 	fmt.Println("SNR:(b)\t=", sum/mseSum, "\t(", dec, "dB)")
+}
+
+func getMaxMSE(bitmap []byte, byteFile []byte) float64 {
+	length := len(bitmap)
+	sum := 0.0
+
+	sum = 0
+	for i := 0; i < length/3; i++ {
+		// sum += math.Pow(float64(bitmap[i*3+2]-byteFile[i*3+2]), 2)
+		sum += math.Pow(float64(int(bitmap[i*3+2])-int(byteFile[i*3+2])), 2)
+	}
+	maxMSE := sum / float64(length/3)
+
+	sum = 0
+	for i := 0; i < length/3; i++ {
+		sum += math.Pow(float64(int(bitmap[i*3+1])-int(byteFile[i*3+1])), 2)
+	}
+	if sum/float64(length/3) > maxMSE {
+		maxMSE = sum / float64(length/3)
+	}
+
+	sum = 0
+	for i := 0; i < length/3; i++ {
+		// sum += math.Pow(float64(bitmap[i*3]-byteFile[i*3]), 2)
+		sum += math.Pow(float64(int(bitmap[i*3])-int(byteFile[i*3])), 2)
+	}
+	if sum/float64(length/3) > maxMSE {
+		maxMSE = sum / float64(length/3)
+	}
+	return maxMSE
+}
+
+func getMinSNR(bitmap []byte, byteFile []byte) float64 {
+	length := len(bitmap)
+	sum := 0.0
+	mseSum := 0.0
+
+	sum = 0
+	mseSum = 0
+	for i := 0; i < length/3; i++ {
+		sum += math.Pow(float64(int(byteFile[i*3+2])), 2)
+		mseSum += math.Pow(float64(int(bitmap[i*3+2])-int(byteFile[i*3+2])), 2)
+	}
+	minSNR := sum / mseSum
+
+	sum = 0
+	mseSum = 0
+	for i := 0; i < length/3; i++ {
+		sum += math.Pow(float64(int(byteFile[i*3+1])), 2)
+		mseSum += math.Pow(float64(int(bitmap[i*3+1])-int(byteFile[i*3+1])), 2)
+	}
+	if sum/mseSum < minSNR {
+		minSNR = sum / mseSum
+	}
+	sum = 0
+	mseSum = 0
+	for i := 0; i < length/3; i++ {
+		sum += math.Pow(float64(int(byteFile[i*3])), 2)
+		mseSum += math.Pow(float64(int(bitmap[i*3])-int(byteFile[i*3])), 2)
+	}
+	if sum/mseSum < minSNR {
+		minSNR = sum / mseSum
+	}
+	return minSNR
 }
